@@ -1,9 +1,14 @@
 package com.appium.android;
 
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import io.appium.java_client.MobileElement;
 import io.appium.java_client.remote.MobileCapabilityType;
 import org.openqa.selenium.By;
@@ -12,22 +17,74 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 
 import io.appium.java_client.android.AndroidDriver;
 import io.appium.java_client.service.local.AppiumDriverLocalService;
+import org.testng.annotations.Test;
+import webalertmisc.PageConfiguration;
 import webalertui.*;
+import org.apache.commons.*;
+import org.apache.commons.cli.*;
+
+import static webalertmisc.Utility.getConfigFile;
+import static webalertmisc.Utility.jsonFileToMap;
 
 public class WebAlertImportPages {
-    public static WebDriver driver;
+    private static WebDriver driver;
     public static AppiumDriverLocalService appiumService;
     public static String appiumServiceUrl;
-    public static final String domain = "lwn.net";
-    public static final String url = "https://" + domain;
+    public static String name;
+    public static String address;
+    public static String configFilePath;
+
+    private static CommandLine cmdline;
+    private static Options cmdOptions;
 
     public static void main(String[] args) {
-        setUp();
-        AddNewPage();
+
+        setupCLIOptions();
+
+        parseCLIOptions(args);
+
+        setupAppiumServer();
+
+        // iterate through all page chron job configurations provided by json file
+        File configFile = getConfigFile(configFilePath);
+        Map<?,?> configFileMap = jsonFileToMap(configFile);
+        ArrayList<LinkedTreeMap<?,?>> pageConfigs = (ArrayList<LinkedTreeMap<?,?>>)configFileMap.get("pages");
+        for(LinkedTreeMap<?,?> pageConfigLTM : pageConfigs) {
+            String pageConfigJson = new Gson().toJson(pageConfigLTM);
+            PageConfiguration pageConfig = new Gson().fromJson(pageConfigJson, PageConfiguration.class);
+            address = pageConfig.getAddress();
+            name = pageConfig.getName();
+            AddNewPage();
+        }
+
         End();
     }
 
-    public static void setUp() {
+    public static void setupCLIOptions() {
+        cmdOptions = new Options();
+
+        Option allowDuplicatesOpt = new Option("allowDuplicates", false, "Allow duplicate page job configurations.");
+        cmdOptions.addOption(allowDuplicatesOpt);
+
+        Option configFileOpt = new Option("configFile", true, "Path to the config file");
+        configFileOpt.setRequired(true);
+        configFileOpt.setLongOpt("configFile");
+        cmdOptions.addOption(configFileOpt);
+    }
+
+    public static void parseCLIOptions(String[] args) {
+        try {
+            cmdline = new DefaultParser().parse(cmdOptions, args);
+        }
+        catch (ParseException e) {
+            System.out.println(e);
+            System.exit(-1);
+        }
+
+        configFilePath = cmdline.getOptionValue("configFile");
+    }
+
+    public static void setupAppiumServer() {
 
         appiumService = AppiumDriverLocalService.buildDefaultService();
         appiumService.start();
@@ -43,7 +100,6 @@ public class WebAlertImportPages {
         capabilities.setCapability(MobileCapabilityType.AUTOMATION_NAME, "UiAutomator2");
         capabilities.setCapability(MobileCapabilityType.FULL_RESET, false);
         capabilities.setCapability("skipServerInstallation", true);
-        //capabilities.setCapability(MobileCapabilityType.NEW_COMMAND_TIMEOUT, 4);
 
         try {
             driver = new AndroidDriver<>(new URL(appiumServiceUrl), capabilities);
@@ -59,8 +115,6 @@ public class WebAlertImportPages {
      * Add a new page.
      */
     public static void AddNewPage() {
-        System.out.println("Starting AddNewPage() test");
-
         // Home page - Click the button with addition icon on the Home page
         HomePage.clickAddPageButton(driver);
 
@@ -69,7 +123,7 @@ public class WebAlertImportPages {
         RecorderPage.DialogBox.clickOkButton(driver);
 
         // Recorder page - type in a valid URL into the text search box
-        RecorderPage.setTextFieldValue(driver, url);
+        RecorderPage.setTextFieldValue(driver, address);
 
         // Recorder page - Press button to submit request to URL
         RecorderPage.clickSubmitUrlButton(driver);
@@ -107,7 +161,7 @@ public class WebAlertImportPages {
         ConfigurationPage.clickNameButton(driver);
 
         // Name dialog - erase all in dialog box text area
-        ConfigurationPage.NameDialogBox.setEditBoxValue(driver, domain);
+        ConfigurationPage.NameDialogBox.setEditBoxValue(driver, name);
 
         driver.findElement(dialogOkButton).click();
 

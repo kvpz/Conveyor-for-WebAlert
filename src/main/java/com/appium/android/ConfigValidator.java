@@ -8,6 +8,9 @@ import webalertmisc.PageConfiguration;
 import java.io.*;
 import java.util.*;
 
+import static webalertmisc.Utility.getConfigFile;
+import static webalertmisc.Utility.jsonFileToMap;
+
 /**
  * A config file is valid if it passes the following criteria:
  * - the supplied path to the config file is valid
@@ -22,14 +25,31 @@ public class ConfigValidator {
     private static boolean noRepeatedNames = true;
     private static boolean noRepeatedAddresses = true;
 
-    public static File getConfigFile(String filePath) {
-        File cfile = new File(filePath);
-        if(!cfile.exists()) {
-            System.out.println("'" + filePath + "'" + " does not identify an existing file.");
+
+
+    private static CommandLine parseCmdInput(String[] args) {
+        CommandLine cmd = null;
+
+        try {
+            cmd = new DefaultParser().parse(cliOpts, args);
+        }
+        catch(ParseException e) {
+            System.out.println("Issue parsing CLI options");
+            System.out.println(e);
             System.exit(-1);
         }
 
-        return cfile;
+        return cmd;
+    }
+
+    private static void setup() {
+        // setup configFile option
+        Option configFileOpt = new Option("configFile", true, "Path to the configuration file");
+        configFileOpt.setRequired(true);
+        configFileOpt.setLongOpt("configFile");
+
+        cliOpts = new Options();
+        cliOpts.addOption(configFileOpt);
     }
 
     private static void validateConfigFile(Map<?,?> jsonMap) {
@@ -54,68 +74,42 @@ public class ConfigValidator {
         addressesMapForTesting.add(conf.getAddress());
     }
 
-    public static Map<?,?> jsonFileToMap(File configFile) {
+    private static void validatePageConfigs(File configFile) {
+        Map<?,?> jsonConfigFileMap = jsonFileToMap(configFile);
+        validateConfigFile(jsonConfigFileMap);
+
+        // validate every page configuration in the json config file
         Gson gson = new Gson();
-        Reader reader = null;
-        try {
-            reader = new FileReader(configFile);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            System.exit(-1);
+        ArrayList<LinkedTreeMap<?, ?>> jsonConfigFileConfigs = (ArrayList<LinkedTreeMap<?,?>>)jsonConfigFileMap.get("pages");
+        for(LinkedTreeMap<?, ?> pageConfLTM : jsonConfigFileConfigs) {
+            String pageConfigJsonStr = gson.toJson(pageConfLTM);
+            PageConfiguration pageConf = gson.fromJson(pageConfigJsonStr, PageConfiguration.class);
+
+            validatePageConfig(pageConf);
         }
-
-        Map<?,?> map = gson.fromJson(reader, Map.class);
-
-        validateConfigFile(map);
-
-        return map;
     }
 
-    public static void setup() {
-        // setup configFile option
-        Option configFileOpt = new Option("configFile", true, "Path to the configuration file");
-        configFileOpt.setRequired(true);
-        configFileOpt.setLongOpt("configFile");
-
-        cliOpts = new Options();
-        cliOpts.addOption(configFileOpt);
-    }
-
-    public static CommandLine parseCmdInput(String[] args) {
-        CommandLine cmd = null;
-
-        try {
-            cmd = new DefaultParser().parse(cliOpts, args);
-        }
-        catch(ParseException e) {
-            System.out.println("Issue parsing CLI options");
-            System.out.println(e);
-            System.exit(-1);
-        }
-
-        return cmd;
-    }
-
-    public static void validationResults() {
+    private static void validationResults() {
         System.out.println("=== Validation Results ===");
+        String RED_FAILING = "\u001B[31m";
+        String AQUA_PASSING = "\u001B[36m";
 
         if(!noRepeatedNames) {
-            System.out.print("\u001B[31m [ \u2717 ] ");
-            System.out.println("No repeated configuration names.");
+            System.out.print(RED_FAILING + "[ \u2717 ] ");
         }
         else {
-            System.out.print("\u001B[36m [ \u2713 ] ");
-            System.out.println("No repeated configuration names.");
+            System.out.print(AQUA_PASSING + "[ \u2713 ] ");
         }
+        System.out.println("No repeated configuration names.");
 
         if(!noRepeatedAddresses) {
-            System.out.print("\u001B[31m [ \u2717 ] ");
-            System.out.println("No repeated addresses.");
+            System.out.print(RED_FAILING + "[ \u2717 ] ");
         }
         else {
-            System.out.print("\u001B[36m [ \u2713 ] ");
-            System.out.println("No repeated addresses.");
+            System.out.print(AQUA_PASSING + "[ \u2713 ] ");
         }
+        System.out.println("No repeated addresses.");
+
     }
 
     public static void main(String[] args) {
@@ -126,15 +120,7 @@ public class ConfigValidator {
         String pathToConfigFile = cmdline.getOptionValue("configFile");
         File configFile = getConfigFile(pathToConfigFile);
 
-        Map<?,?> jsonRoot = jsonFileToMap(configFile);
-
-        Gson gson = new Gson();
-        for(LinkedTreeMap<?,?> pageConfigMap : (ArrayList<LinkedTreeMap<?,?>>)jsonRoot.get("pages")) {
-            String pageConfigJsonStr = gson.toJson(pageConfigMap);
-            PageConfiguration pageConf = gson.fromJson(pageConfigJsonStr, PageConfiguration.class);
-
-            validatePageConfig(pageConf);
-        }
+        validatePageConfigs(configFile);
 
         validationResults();
     }

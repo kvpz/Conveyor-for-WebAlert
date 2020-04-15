@@ -1,14 +1,18 @@
 package webalertmisc;
 
+import com.google.gson.internal.LinkedTreeMap;
 import org.apache.http.protocol.RequestUserAgent;
 
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * This class represents an instance of a page chron job configuration.
  * Objects of this type will be instantiated from a json based object.
  */
-public class Configuration {
+public class PageConfiguration {
     String name;
     String address;
     String userAgent;
@@ -25,7 +29,7 @@ public class Configuration {
         this.userAgent = userAgent;
     }
 
-    public String getname() {
+    public String getName() {
         return name;
     }
 
@@ -37,3 +41,4 @@ public class Configuration {
         return userAgent;
     }
 }
+
