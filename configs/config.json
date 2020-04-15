@@ -1,0 +1,14 @@
+{
+  "pages": [
+    {
+      "name":"lwn.net",
+      "address":"https://lwn.net/",
+      "userAgent":"Mozilla/5.0 (Linux; Android 10; Pixel 3 Build/QQ2A.200305.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/80.0.3987.162 Mobile Safari/537.36"
+    },
+    {
+      "name":"lwn.net1",
+      "address":"https://lwn.net/",
+      "userAgent":"Mozilla/5.0 (Linux; Android 10; Pixel 3 Build/QQ2A.200305.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/80.0.3987.162 Mobile Safari/537.36"
+    }
+  ]
+}
