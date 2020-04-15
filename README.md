@@ -41,10 +41,10 @@ Before compiling any code, configurations need to be setup.  A configuration fil
 Allowing duplicate configurations/pages to be added to the app will speed up the import process because logic does not have to be implemented for detecting duplicate content.  Not allowing it though would guarantee the app user that every tracking job is unique.  
 
 ## Tasks
--[x] Create a class per page/view in the app
--[x] Create CLI UI
--[x] Create CLI option parsing method
--[ ] Create feature flag procedure called *allowDuplicates* to avoid adding a page that already exists
--[x] Create a feature flag procedure called *configFile* for adding many pages consecutively
--[ ] Create configuration setting for submitting login information with the addition of a page job
--[x] Create configuration settings validator program
+- [x] Create a class per page/view in the app
+- [x] Create CLI UI
+- [x] Create CLI option parsing method
+- [ ] Create feature flag procedure called *allowDuplicates* to avoid adding a page that already exists
+- [x] Create a feature flag procedure called *configFile* for adding many pages consecutively
+- [ ] Create configuration setting for submitting login information with the addition of a page job
+- [x] Create configuration settings validator program
